@@ -1,56 +1,35 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from pyowm import OWM
+from pyowm.utils import config
+from pyowm.utils import timestamps
+from telegram import Update,Bot
+from telegram.ext import Updater, CommandHandler, CallbackContext
+import datetime
 import logging
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=logging.INFO)
 
-def start(update: Update, context: CallbackContext) -> None:
-    """Sends a message with three inline buttons attached."""
-    keyboard = [
-        [
-            InlineKeyboardButton("Option 1", callback_data='1'),
-            InlineKeyboardButton("Option 2", callback_data='2'),
-        ],
-        [InlineKeyboardButton("Option 3", callback_data='3')],
-    ]
+owm = OWM('TOKEN')
+mgr = owm.weather_manager()
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+observation = mgr.weather_at_place('Neka')
+w = observation.weather
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+def weather():
+    time = datetime.datetime.now().strftime("%H")
+    while True:
+        if(time == "08"):
+            return "Neka's Weather for Today: \n " + str(w.detailed_status)
 
+    
 
-def button(update: Update, context: CallbackContext) -> None:
-    """Parses the CallbackQuery and updates the message text."""
-    query = update.callback_query
+def main():
+    bot = Bot("TOKEN")
+    updater = Updater("TOKEN")
+    dispatcher = updater.dispatcher
 
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    query.answer()
-
-    query.edit_message_text(text=f"Selected option: {query.data}")
-
-
-def help_command(update: Update, context: CallbackContext) -> None:
-    """Displays info on how to use the bot."""
-    update.message.reply_text("Use /start to test this bot.")
-
-
-def main() -> None:
-    """Run the bot."""
-    # Create the Updater and pass it your bot's token.
-    updater = Updater("2062503972:AAHa2_8XhuhFSwxePLSlfbVoDQKnF8SEqKM")
-
-    updater.dispatcher.add_handler(CommandHandler('start', start))
-    updater.dispatcher.add_handler(CallbackQueryHandler(button))
-    updater.dispatcher.add_handler(CommandHandler('help', help_command))
-
-    # Start the Bot
+    bot.send_message(chat_id="-1001604367904", text=weather())
     updater.start_polling()
-
-    # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT
     updater.idle()
 
-if __name__ == '__main__':
-    main()
+main()
